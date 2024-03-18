@@ -1,0 +1,18 @@
+
+// takes -from the stack, returns - to the stack
+#define macro MAIN() = takes(0) returns(0) {
+
+    ///////// Explain //////////
+
+//    // PUSH0 - in HUFF not needed write word PUSH0, compiler transform values in right opcode
+//    0x00                // [0]
+// // 0x02                // TOP [2, 0] BOTTOM - this is for example
+//    calldataload        // [calldata - first32 bytes]
+//    // we need to shift in right 28 bytes, to get only 4 first bytes. 28 bytes = 224 bits = 0xe0 bits in hex
+//    0xe0                // [0xe0, 32 bytes of call data]
+//    SHR                 // [0x 4bytes of calldata - selector of function]
+
+
+    //////// The real code ////////
+    0x00 calldataload 0xe0 shr  // ==> as a result we have a function selector from calldata in the stack
+} 
