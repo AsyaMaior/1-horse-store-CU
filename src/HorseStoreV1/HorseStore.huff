@@ -15,4 +15,40 @@
 
     //////// The real code ////////
     0x00 calldataload 0xe0 shr  // ==> as a result we have a function selector from calldata in the stack
+
+    //duplicate selector for reusing it later
+    dup1                    // [func_selector, func_selector]
+
+    //Jump -> function data associated with the selector
+    0xcdfead2e              // [0xcdfead2e, function_selector, func_selector]  0xcdfead2e - is updateHorseNumber(uint256) selector  
+    eq                      // [true if func selector matches, func_selector]
+    // jump to updateHorseNumber code if true
+    updateJump              // [programm_counter_to_Update_Horses, true/false, func_selector]
+    jumpi                   // [func_selector]
+
+    // if we have more function selectors we must dup1 again!!!
+    0xe026c017              // [0xe026c017, func_selector]  0xe026c017 - is a readNumberOfHorses() selector
+    eq                      // [true/false]
+    readJump                // [pc_to_Read_Horses (readJump), true/false]
+
+
+   
+
+
+
+
+
+    updateJump:
+        SET_NUMBER_OF_HORSES()
+
+    readJump:
+        GET_NUMBER_OF_HORSES()
 } 
+
+#define macro SET_NUMBER_OF_HORSES() = takes(1) returns(0) {
+
+}
+
+#define macro GET_NUMBER_OF_HORSES() = takes(0) returns(0) {
+    
+}
