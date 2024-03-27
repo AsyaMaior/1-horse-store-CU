@@ -1,20 +1,23 @@
+/* Interfaces */
+
+#define function updateHorseNumber(uint256) nonpayable returns()
+#define function readNumberOfHorses() view returns(uint256)
+
+#define constant NUMBER_OF_HORSES_STORAGE_SLOT = FREE_STORAGE_POINTER()
 
 // takes -from the stack, returns - to the stack
 #define macro MAIN() = takes(0) returns(0) {
 
     ///////// Explain //////////
 
-//    // PUSH0 - in HUFF not needed write word PUSH0, compiler transform values in right opcode
-//    0x00                // [0]
-// // 0x02                // TOP [2, 0] BOTTOM - this is for example
-//    calldataload        // [calldata - first32 bytes]
-//    // we need to shift in right 28 bytes, to get only 4 first bytes. 28 bytes = 224 bits = 0xe0 bits in hex
-//    0xe0                // [0xe0, 32 bytes of call data]
-//    SHR                 // [0x 4bytes of calldata - selector of function]
-
-
-    //////// The real code ////////
-    0x00 calldataload 0xe0 shr  // ==> as a result we have a function selector from calldata in the stack
+/*  
+    PUSH0 - in HUFF not needed write word PUSH0, compiler transform values in right opcode
+    0x00                // [0]
+        // 0x02                // TOP [2, 0] BOTTOM - this is for example
+    calldataload        // [calldata - first32 bytes]
+    // we need to shift in right 28 bytes, to get only 4 first bytes. 28 bytes = 224 bits = 0xe0 bits in hex
+    0xe0                // [0xe0, 32 bytes of call data]
+    SHR                 // [0x 4bytes of calldata - selector of function]
 
     //duplicate selector for reusing it later
     dup1                    // [func_selector, func_selector]
@@ -30,13 +33,17 @@
     0xe026c017              // [0xe026c017, func_selector]  0xe026c017 - is a readNumberOfHorses() selector
     eq                      // [true/false]
     readJump                // [pc_to_Read_Horses (readJump), true/false]
+    jumpi
 
+    0x00 0x00 revert        // put 2 zeros on stack and do revert opcode - if selector doesnt match with any function
+*/
 
-   
+    //////// The real code ////////
 
-
-
-
+    0x00 calldataload 0xe0 shr              // ==> as a result we have a function selector from calldata in the stack
+    dup1 __FUNC_SIG(updateHorseNumber) eq updateJump jumpi     // [copied func_selector] If selectors match -> jump
+    __FUNC_SIG(readNumberOfHorses) eq readJump jumpi           // [] If selectors match -> jump
+    0x00 0x00 revert                                           // revert if no selectors matching
 
     updateJump:
         SET_NUMBER_OF_HORSES()
@@ -47,8 +54,16 @@
 
 #define macro SET_NUMBER_OF_HORSES() = takes(1) returns(0) {
 
+    0x04 calldataload                   // [argument from input calldata]
+    [NUMBER_OF_HORSES_STORAGE_SLOT]     // [storage_slot_of_Horses, argument from input calldata]
+    sstore                              // arg is in the storage now
+    stop                                // end of the tx
 }
 
 #define macro GET_NUMBER_OF_HORSES() = takes(0) returns(0) {
-    
+    [NUMBER_OF_HORSES_STORAGE_SLOT]     // [key_of_storage_slot]
+    sload                               // [value_from_storage]
+    0x00                                // [0x00, value_from_storage] 
+    mstore                              // []  Memory: [value]
+    0x20 0x00 return                    // [] successfully exit from context
 }
